@@ -1,444 +1,182 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDFSplicer | Secure Browser PDF Merger</title>
-    <meta name="description" content="Merge and reorder PDF files securely in your browser. Files never leave your device.">
-    <meta name="theme-color" content="#2563eb">
-    <!-- Tailwind CSS for styling -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- pdf-lib for PDF manipulation -->
-    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-    <!-- SortableJS for drag-and-drop reordering -->
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6;
-        }
-        /* Styling for the drag-and-drop ghost element */
-        .sortable-ghost {
-            opacity: 0.4;
-            background-color: #e5e7eb;
-            border: 2px dashed #9ca3af;
-        }
-        /* Custom scrollbar for the file list */
-        .file-list-container::-webkit-scrollbar {
-            width: 8px;
-        }
-        .file-list-container::-webkit-scrollbar-track {
-            background: #f1f1f1; 
-            border-radius: 4px;
-        }
-        .file-list-container::-webkit-scrollbar-thumb {
-            background: #c1c1c1; 
-            border-radius: 4px;
-        }
-        .file-list-container::-webkit-scrollbar-thumb:hover {
-            background: #a8a8a8; 
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDFSplicer Pro | Merge, Split & Edit PDFs in Your Browser</title>
+  <meta name="description" content="A privacy-friendly browser PDF toolkit for merging, splitting, extracting, removing and rotating PDF pages without uploading files to a server.">
+  <meta name="theme-color" content="#2563eb">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>.spin-icon{animation:spin .9s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}</style>
 </head>
-<body class="min-h-screen flex flex-col text-gray-800">
+<body>
+  <header class="site-header">
+    <div class="brand">
+      <div class="brand-mark"><i data-lucide="files"></i></div>
+      <span>PDFSplicer Pro</span>
+    </div>
+    <div class="privacy-pill"><i data-lucide="shield-check" size="16"></i><span>Local browser processing</span></div>
+  </header>
 
-    <header class="bg-white shadow-sm py-4 px-6 md:px-12 flex justify-between items-center sticky top-0 z-10">
-        <div class="flex items-center gap-3">
-            <div class="bg-blue-600 p-2 rounded-lg text-white">
-                <i data-lucide="file-check-2"></i>
-            </div>
-            <h1 class="text-xl font-bold text-gray-800 tracking-tight">PDFSplicer</h1>
+  <main class="shell">
+    <section class="hero">
+      <div class="eyebrow"><i data-lucide="sparkles" size="16"></i> Advanced PDF workspace</div>
+      <h1>Merge, split and reshape PDFs without uploading them.</h1>
+      <p>Fast client-side PDF tools for everyday document work. Your PDF contents stay on your device while processing happens in the browser.</p>
+    </section>
+
+    <nav class="tool-tabs" aria-label="PDF tools">
+      <button class="tool-tab active" data-tool="merge"><i data-lucide="combine"></i> Merge PDFs</button>
+      <button class="tool-tab" data-tool="split"><i data-lucide="scissors"></i> Split PDF</button>
+      <button class="tool-tab" data-tool="pages"><i data-lucide="panels-top-left"></i> Page Tools</button>
+    </nav>
+
+    <section class="tool-panel active" id="panel-merge">
+      <div class="panel-head">
+        <div class="panel-title">
+          <div class="panel-icon"><i data-lucide="combine"></i></div>
+          <div><h2>Merge PDFs</h2><p>Combine multiple PDFs in any order and download one final document.</p></div>
         </div>
-        <div class="text-sm text-gray-500 font-medium">
-            Combine files securely in your browser
+        <div class="stats">
+          <span class="stat-pill" id="merge-files-stat">0 files</span>
+          <span class="stat-pill" id="merge-pages-stat">0 pages</span>
+          <span class="stat-pill" id="merge-size-stat">0 Bytes</span>
         </div>
-    </header>
-
-    <main class="flex-grow p-4 md:p-8 flex justify-center">
-        <div class="w-full max-w-4xl bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row h-[calc(100vh-140px)] min-h-[600px]">
-            
-            <div class="w-full md:w-1/3 bg-gray-50 p-6 flex flex-col border-r border-gray-200">
-                <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
-                    <i data-lucide="upload-cloud" class="w-5 h-5 text-blue-500"></i> Add Files
-                </h2>
-                
-                <!-- Dropzone area -->
-                <div id="drop-zone" class="border-2 border-dashed border-blue-300 rounded-xl p-8 text-center bg-blue-50/50 hover:bg-blue-50 transition-colors cursor-pointer flex flex-col items-center justify-center min-h-[160px] relative group">
-                    <input type="file" id="file-input" multiple accept="application/pdf" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" title="Click or drop PDFs here">
-                    <i data-lucide="file-plus" class="w-10 h-10 text-blue-400 mb-3 group-hover:scale-110 transition-transform"></i>
-                    <p class="text-sm font-medium text-blue-900 mb-1">Click or drag PDFs here</p>
-                    <p class="text-xs text-blue-500">Maximum file size: 50MB per file</p>
-                </div>
-
-                <div class="mt-6 flex-grow flex flex-col justify-end gap-3">
-                    <button id="clear-all-btn" class="w-full py-2.5 px-4 rounded-lg text-red-600 bg-red-50 hover:bg-red-100 font-medium text-sm flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                        <i data-lucide="trash-2" class="w-4 h-4"></i> Clear All Files
-                    </button>
-                    <button id="merge-btn" class="w-full py-3 px-4 rounded-lg text-white bg-blue-600 hover:bg-blue-700 font-semibold shadow-md hover:shadow-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-                        <i data-lucide="layers" class="w-5 h-5"></i> Merge PDFs
-                    </button>
-                    <!-- Progress / Status Area -->
-                    <div id="status-message" class="text-center text-sm font-medium h-5 mt-2 text-gray-600"></div>
-                </div>
+      </div>
+      <div class="panel-body">
+        <div class="workspace-grid">
+          <div>
+            <div class="dropzone" id="merge-dropzone">
+              <input id="merge-input" type="file" accept="application/pdf,.pdf" multiple>
+              <div class="dropzone-icon"><i data-lucide="files"></i></div>
+              <strong>Drop multiple PDFs here</strong>
+              <span>or click to browse · up to 50 MB per file</span>
             </div>
-
-            <div class="w-full md:w-2/3 p-6 flex flex-col bg-white">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-semibold flex items-center gap-2">
-                        <i data-lucide="list-ordered" class="w-5 h-5 text-gray-500"></i> Sequence & Arrange
-                    </h2>
-                    <span id="file-count-badge" class="bg-gray-100 text-gray-600 text-xs font-bold px-2.5 py-1 rounded-full border border-gray-200">0 files</span>
-                </div>
-                
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
-                    <p class="text-sm text-gray-500">Drag and drop the files below to reorder them before merging.</p>
-                    <button id="sort-numbers-btn" class="text-sm py-1.5 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md border border-gray-300 transition-colors flex items-center gap-1 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
-                        <i data-lucide="arrow-down-1-0" class="w-4 h-4"></i> Sort by Number
-                    </button>
-                </div>
-
-                <!-- Container for the sortable file list -->
-                <div class="file-list-container flex-grow overflow-y-auto pr-2 -mr-2 relative">
-                    <ul id="file-list" class="space-y-3 pb-4">
-                        <!-- Empty state placeholder -->
-                        <div id="empty-state" class="absolute inset-0 flex flex-col items-center justify-center text-gray-400">
-                            <i data-lucide="file-stack" class="w-16 h-16 mb-4 opacity-50"></i>
-                            <p class="text-base font-medium">No PDFs added yet.</p>
-                            <p class="text-sm">Use the area on the left to add files.</p>
-                        </div>
-                        <!-- File items will be injected here by JS -->
-                    </ul>
-                </div>
+            <div class="empty-list" id="merge-empty">No PDFs added yet. Add at least two files to start merging.</div>
+            <div class="file-list" id="merge-list"></div>
+          </div>
+          <aside class="card card-pad control-stack">
+            <div>
+              <h3>Merge options</h3>
+              <p class="helper">Reorder using the drag handle, or use smart numeric sorting.</p>
             </div>
+            <div class="field">
+              <label for="merge-name">Output filename</label>
+              <input class="text-input" id="merge-name" value="merged-document" autocomplete="off">
+            </div>
+            <div class="button-row">
+              <button class="btn btn-secondary" id="merge-sort" disabled><i data-lucide="arrow-down-0-1"></i> Sort by number</button>
+              <button class="btn btn-danger" id="merge-clear" disabled><i data-lucide="trash-2"></i> Clear all</button>
+            </div>
+            <button class="btn btn-primary btn-wide" id="merge-run" disabled><i data-lucide="download"></i> Merge & download PDF</button>
+            <div class="processing-note" id="merge-progress"></div>
+          </aside>
         </div>
-    </main>
+      </div>
+    </section>
 
-    <footer class="text-center py-4 text-sm text-gray-500 border-t border-gray-200 bg-white mt-auto">
-        <p>All processing happens locally in your browser. No files are uploaded to any server.</p>
-    </footer>
+    <section class="tool-panel" id="panel-split">
+      <div class="panel-head">
+        <div class="panel-title">
+          <div class="panel-icon"><i data-lucide="scissors"></i></div>
+          <div><h2>Split PDF</h2><p>Break one PDF into individual pages, chunks, or custom ranges.</p></div>
+        </div>
+        <div class="stats"><span class="stat-pill">ZIP output</span><span class="stat-pill">Custom ranges</span></div>
+      </div>
+      <div class="panel-body">
+        <div class="workspace-grid">
+          <div>
+            <div class="dropzone" id="split-dropzone">
+              <input id="split-input" type="file" accept="application/pdf,.pdf">
+              <div class="dropzone-icon"><i data-lucide="file-input"></i></div>
+              <strong>Choose one PDF to split</strong>
+              <span>click or drag one PDF here · up to 50 MB</span>
+            </div>
+            <div class="file-summary" id="split-summary">
+              <div class="summary-icon"><i data-lucide="file-text"></i></div>
+              <div class="summary-text"><div class="summary-name" id="split-summary-name"></div><div class="summary-meta" id="split-summary-meta"></div></div>
+            </div>
+          </div>
+          <aside class="card card-pad control-stack">
+            <div><h3>Split method</h3><p class="helper">Each resulting PDF is packaged into a single ZIP download.</p></div>
+            <div class="option-grid">
+              <label class="option-card"><input type="radio" name="split-mode" value="each" checked><span><strong>Every page</strong><small>Create one PDF per page.</small></span></label>
+              <label class="option-card"><input type="radio" name="split-mode" value="chunk"><span><strong>Fixed-size chunks</strong><small>Example: 3 pages in every output PDF.</small></span></label>
+              <label class="option-card"><input type="radio" name="split-mode" value="custom"><span><strong>Custom ranges</strong><small>Example: 1-3, 4-7, 8-10.</small></span></label>
+            </div>
+            <div class="field conditional" id="split-chunk-wrap">
+              <label for="split-chunk">Pages per file</label>
+              <input class="number-input" id="split-chunk" type="number" min="1" value="2">
+            </div>
+            <div class="field conditional" id="split-custom-wrap">
+              <label for="split-custom">Custom ranges</label>
+              <input class="text-input" id="split-custom" placeholder="Example: 1-3,4-6,7-10" autocomplete="off">
+              <span class="field-note">Separate output groups with commas.</span>
+            </div>
+            <div class="field"><label for="split-name">ZIP / file prefix</label><input class="text-input" id="split-name" value="document-split" autocomplete="off"></div>
+            <button class="btn btn-primary btn-wide" id="split-run" disabled><i data-lucide="archive"></i> Split & download ZIP</button>
+            <div class="processing-note" id="split-progress"></div>
+          </aside>
+        </div>
+      </div>
+    </section>
 
-    <script>
-        // Initialize Lucide icons
-        lucide.createIcons();
+    <section class="tool-panel" id="panel-pages">
+      <div class="panel-head">
+        <div class="panel-title">
+          <div class="panel-icon"><i data-lucide="panels-top-left"></i></div>
+          <div><h2>Page Tools</h2><p>Extract, remove, or rotate selected pages and save a new PDF.</p></div>
+        </div>
+        <div class="stats"><span class="stat-pill">Extract</span><span class="stat-pill">Remove</span><span class="stat-pill">Rotate</span></div>
+      </div>
+      <div class="panel-body">
+        <div class="workspace-grid">
+          <div>
+            <div class="dropzone" id="pages-dropzone">
+              <input id="pages-input" type="file" accept="application/pdf,.pdf">
+              <div class="dropzone-icon"><i data-lucide="file-cog"></i></div>
+              <strong>Choose one PDF to edit</strong>
+              <span>select a PDF and specify the pages you want to change</span>
+            </div>
+            <div class="file-summary" id="pages-summary">
+              <div class="summary-icon"><i data-lucide="file-text"></i></div>
+              <div class="summary-text"><div class="summary-name" id="pages-summary-name"></div><div class="summary-meta" id="pages-summary-meta"></div></div>
+            </div>
+          </div>
+          <aside class="card card-pad control-stack">
+            <div><h3>Page operation</h3><p class="helper">Page numbers are 1-based. You can mix ranges and individual pages.</p></div>
+            <div class="option-grid">
+              <label class="option-card"><input type="radio" name="page-action" value="extract" checked><span><strong>Extract pages</strong><small>Create a PDF containing only selected pages.</small></span></label>
+              <label class="option-card"><input type="radio" name="page-action" value="remove"><span><strong>Remove pages</strong><small>Create a copy without the selected pages.</small></span></label>
+              <label class="option-card"><input type="radio" name="page-action" value="rotateLeft"><span><strong>Rotate left</strong><small>Rotate selected pages 90° counter-clockwise.</small></span></label>
+              <label class="option-card"><input type="radio" name="page-action" value="rotateRight"><span><strong>Rotate right</strong><small>Rotate selected pages 90° clockwise.</small></span></label>
+            </div>
+            <div class="field">
+              <label for="pages-selection">Pages</label>
+              <input class="text-input" id="pages-selection" placeholder="Example: 1-3, 5, 8-10" autocomplete="off">
+              <span class="field-note">Duplicates are automatically removed.</span>
+            </div>
+            <div class="field"><label for="pages-name">Output filename</label><input class="text-input" id="pages-name" value="processed-document" autocomplete="off"></div>
+            <button class="btn btn-primary btn-wide" id="pages-run" disabled><i data-lucide="wand-sparkles"></i> Process & download PDF</button>
+            <div class="processing-note" id="pages-progress"></div>
+          </aside>
+        </div>
+      </div>
+    </section>
 
-        // State to hold our selected files
-        let selectedFiles = [];
-        let fileIdCounter = 0;
+    <section class="feature-strip">
+      <div class="feature-card"><strong>Private by design</strong><span>PDF contents are processed in your browser instead of being uploaded by this app.</span></div>
+      <div class="feature-card"><strong>Useful validation</strong><span>Page ranges, file size, encrypted PDFs and empty outputs are checked before download.</span></div>
+      <div class="feature-card"><strong>No installation</strong><span>Runs as a static GitHub Pages app with modern browser APIs.</span></div>
+    </section>
+  </main>
 
-        // DOM Elements
-        const fileInput = document.getElementById('file-input');
-        const dropZone = document.getElementById('drop-zone');
-        const fileListElement = document.getElementById('file-list');
-        const emptyState = document.getElementById('empty-state');
-        const mergeBtn = document.getElementById('merge-btn');
-        const clearAllBtn = document.getElementById('clear-all-btn');
-        const sortNumbersBtn = document.getElementById('sort-numbers-btn');
-        const statusMessage = document.getElementById('status-message');
-        const fileCountBadge = document.getElementById('file-count-badge');
-
-        // Initialize SortableJS on the list
-        const sortableList = new Sortable(fileListElement, {
-            animation: 150,
-            ghostClass: 'sortable-ghost',
-            handle: '.drag-handle', // Only allow dragging from the handle icon
-            onEnd: function (evt) {
-                // When dragging ends, update the underlying array based on new DOM order
-                updateStateFromDOM();
-            }
-        });
-
-        // Initialize UI state
-        updateUI();
-
-        // --- Event Listeners ---
-
-        // Handle file selection via input click
-        fileInput.addEventListener('change', (e) => {
-            handleFiles(e.target.files);
-            // Reset input so the same file can be selected again if removed
-            fileInput.value = ''; 
-        });
-
-        // Handle Drag & Drop on the dropzone
-        dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.classList.add('border-blue-500', 'bg-blue-100/50');
-        });
-
-        dropZone.addEventListener('dragleave', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('border-blue-500', 'bg-blue-100/50');
-        });
-
-        dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('border-blue-500', 'bg-blue-100/50');
-            if (e.dataTransfer.files) {
-                handleFiles(e.dataTransfer.files);
-            }
-        });
-
-        // Handle global dragover to prevent default browser behavior (opening file)
-        window.addEventListener('dragover', (e) => e.preventDefault(), false);
-        window.addEventListener('drop', (e) => e.preventDefault(), false);
-
-        // Clear all files
-        clearAllBtn.addEventListener('click', () => {
-            selectedFiles = [];
-            renderFileList();
-            updateUI();
-        });
-
-        // Sort by number
-        sortNumbersBtn.addEventListener('click', () => {
-            if (selectedFiles.length < 2) return;
-            
-            // Extract the first number found in the filename, default to Infinity if none found so they go to the bottom
-            const extractNumber = (filename) => {
-                const match = filename.match(/\d+/);
-                return match ? parseInt(match[0], 10) : Infinity;
-            };
-
-            selectedFiles.sort((a, b) => {
-                const numA = extractNumber(a.name);
-                const numB = extractNumber(b.name);
-                
-                if (numA !== numB) {
-                    return numA - numB;
-                }
-                // Fallback to alphabetical if numbers are the same (or both have no numbers)
-                return a.name.localeCompare(b.name);
-            });
-
-            renderFileList();
-            showStatus('Files sorted numerically by filename.', 'success');
-        });
-
-        // Merge button
-        mergeBtn.addEventListener('click', mergePDFs);
-
-        // --- Functions ---
-
-        function handleFiles(files) {
-            const maxFileSize = 50 * 1024 * 1024;
-            const pdfFiles = Array.from(files).filter(file => file.type === 'application/pdf');
-            const acceptedFiles = pdfFiles.filter(file => file.size <= maxFileSize);
-            
-            if (pdfFiles.length === 0) {
-                showStatus('Please select valid PDF files.', 'error');
-                return;
-            }
-
-            if (files.length !== pdfFiles.length) {
-                showStatus('Some non-PDF files were ignored.', 'warning');
-            }
-
-            if (acceptedFiles.length !== pdfFiles.length) {
-                showStatus('PDFs larger than 50MB were ignored.', 'warning');
-            }
-
-            if (acceptedFiles.length === 0) return;
-
-            acceptedFiles.forEach(file => {
-                // Add unique ID to each file object for tracking during sort
-                selectedFiles.push({
-                    id: `file-${fileIdCounter++}`,
-                    file: file,
-                    name: file.name,
-                    size: formatBytes(file.size)
-                });
-            });
-
-            renderFileList();
-            updateUI();
-        }
-
-        function renderFileList() {
-            // Clear current list items (keep empty state if needed)
-            fileListElement.innerHTML = '';
-            
-            if (selectedFiles.length === 0) {
-                fileListElement.appendChild(emptyState);
-                emptyState.style.display = 'flex';
-                return;
-            }
-            
-            emptyState.style.display = 'none';
-
-            selectedFiles.forEach((fileObj, index) => {
-                const li = document.createElement('li');
-                li.className = 'bg-white border border-gray-200 rounded-lg p-3 flex items-center gap-3 shadow-sm hover:shadow-md transition-shadow group';
-                li.dataset.id = fileObj.id; // Store ID for reordering
-
-                li.innerHTML = `
-                    <div class="drag-handle cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 p-1">
-                        <i data-lucide="grip-vertical" class="w-5 h-5"></i>
-                    </div>
-                    <div class="flex items-center justify-center w-8 h-8 rounded bg-red-50 text-red-500 flex-shrink-0">
-                        <span class="text-xs font-bold">${index + 1}</span>
-                    </div>
-                    <div class="flex-grow min-w-0">
-                        <p class="text-sm font-medium text-gray-800 truncate" title="${fileObj.name}">${fileObj.name}</p>
-                        <p class="text-xs text-gray-500">${fileObj.size}</p>
-                    </div>
-                    <button class="remove-btn p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors" title="Remove file">
-                        <i data-lucide="x" class="w-4 h-4"></i>
-                    </button>
-                `;
-
-                // Add remove listener
-                const removeBtn = li.querySelector('.remove-btn');
-                removeBtn.addEventListener('click', () => {
-                    removeFile(fileObj.id);
-                });
-
-                fileListElement.appendChild(li);
-            });
-
-            // Re-render icons for newly added elements
-            lucide.createIcons();
-        }
-
-        function removeFile(id) {
-            selectedFiles = selectedFiles.filter(f => f.id !== id);
-            renderFileList();
-            updateUI();
-        }
-
-        function updateStateFromDOM() {
-            // Get current order of DOM elements
-            const listItems = Array.from(fileListElement.querySelectorAll('li'));
-            const newOrderIds = listItems.map(li => li.dataset.id);
-            
-            // Reconstruct the array based on DOM order
-            const newSelectedFiles = [];
-            newOrderIds.forEach(id => {
-                const fileObj = selectedFiles.find(f => f.id === id);
-                if (fileObj) newSelectedFiles.push(fileObj);
-            });
-            
-            selectedFiles = newSelectedFiles;
-            
-            // Re-render to update the numbers (1, 2, 3...)
-            renderFileList();
-        }
-
-        function updateUI() {
-            const count = selectedFiles.length;
-            fileCountBadge.textContent = `${count} file${count !== 1 ? 's' : ''}`;
-            
-            const hasFiles = count > 0;
-            mergeBtn.disabled = count < 2; // Need at least 2 files to merge realistically, but let's allow 1 if they just want to resave
-            clearAllBtn.disabled = !hasFiles;
-            sortNumbersBtn.disabled = count < 2;
-
-            if (count > 0 && count < 2) {
-                mergeBtn.title = "Add at least one more file to merge";
-            } else {
-                mergeBtn.title = "";
-            }
-        }
-
-        function showStatus(message, type = 'info') {
-            statusMessage.textContent = message;
-            statusMessage.className = 'text-center text-sm font-medium h-5 mt-2 transition-colors duration-300';
-            
-            if (type === 'error') statusMessage.classList.add('text-red-500');
-            else if (type === 'success') statusMessage.classList.add('text-green-600');
-            else if (type === 'warning') statusMessage.classList.add('text-yellow-600');
-            else statusMessage.classList.add('text-gray-600');
-
-            // Clear message after 3 seconds
-            setTimeout(() => {
-                if (statusMessage.textContent === message) {
-                    statusMessage.textContent = '';
-                }
-            }, 3000);
-        }
-
-        async function mergePDFs() {
-            if (selectedFiles.length === 0) return;
-
-            try {
-                // Update UI state to loading
-                mergeBtn.disabled = true;
-                mergeBtn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Merging...';
-                lucide.createIcons();
-                showStatus('Processing PDFs...', 'info');
-
-                const PDFDocument = PDFLib.PDFDocument;
-                
-                // Create a new, empty PDF document
-                const mergedPdf = await PDFDocument.create();
-
-                // Loop through selected files in their current order
-                for (let i = 0; i < selectedFiles.length; i++) {
-                    const fileObj = selectedFiles[i];
-                    
-                    // Read file as ArrayBuffer
-                    const arrayBuffer = await fileObj.file.arrayBuffer();
-                    
-                    try {
-                        // Load the PDF
-                        const pdfToMerge = await PDFDocument.load(arrayBuffer);
-                        
-                        // Get all page indices
-                        const copiedPages = await mergedPdf.copyPages(pdfToMerge, pdfToMerge.getPageIndices());
-                        
-                        // Add pages to merged document
-                        copiedPages.forEach((page) => {
-                            mergedPdf.addPage(page);
-                        });
-                    } catch (err) {
-                        console.error(`Error loading file ${fileObj.name}:`, err);
-                        throw new Error(`Failed to process ${fileObj.name}. Ensure it's a valid, unencrypted PDF.`);
-                    }
-                }
-
-                // Serialize the merged PDF to a Uint8Array
-                const mergedPdfBytes = await mergedPdf.save();
-
-                // Trigger download
-                downloadByteArray("merged_document.pdf", mergedPdfBytes);
-                showStatus('PDFs merged successfully!', 'success');
-
-            } catch (error) {
-                console.error("Merging error:", error);
-                showStatus(error.message || 'An error occurred while merging.', 'error');
-            } finally {
-                // Reset button UI
-                mergeBtn.innerHTML = '<i data-lucide="layers" class="w-5 h-5"></i> Merge PDFs';
-                mergeBtn.disabled = false;
-                lucide.createIcons();
-                updateUI(); // Re-evaluate disabled state based on count
-            }
-        }
-
-        function downloadByteArray(fileName, byte) {
-            const blob = new Blob([byte], { type: "application/pdf" });
-            const link = document.createElement("a");
-            link.href = window.URL.createObjectURL(blob);
-            link.download = fileName;
-            link.click();
-            
-            // Clean up the object URL
-            setTimeout(() => {
-                window.URL.revokeObjectURL(link.href);
-            }, 100);
-        }
-
-        function formatBytes(bytes, decimals = 2) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const dm = decimals < 0 ? 0 : decimals;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-        }
-
-    </script>
+  <footer class="footer"><strong>PDFSplicer Pro</strong> · Browser-first PDF tools by Onkar Pawar</footer>
+  <div class="toast-wrap" id="toast-wrap" aria-live="polite"></div>
+  <script src="app.js"></script>
 </body>
 </html>
