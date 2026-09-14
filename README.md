@@ -1,50 +1,87 @@
-# PDFSplicer
+# PDFSplicer Pro
 
-A lightweight, privacy-friendly PDF merger that runs entirely in the browser.
+A privacy-friendly, browser-based PDF toolkit for merging, splitting, extracting, removing, and rotating PDF pages without uploading document contents to a backend server.
 
-PDFSplicer lets you add multiple PDF files, reorder them with drag-and-drop, sort them by number in the filename, remove unwanted files, and merge everything into a single PDF without uploading documents to a server.
+## Live App
 
-## Features
+```text
+https://onkarpawar1.github.io/PDFSplicer/
+```
 
-- Merge multiple PDF files directly in the browser
-- Drag-and-drop file upload
-- Drag-and-drop reordering before merging
-- Numerical sorting based on filenames
-- Individual file removal and clear-all option
-- 50 MB maximum file size per PDF
-- Automatic download of the merged PDF
-- No backend or server required
-- No PDF files are uploaded during processing
-- Responsive interface built with Tailwind CSS
+## What PDFSplicer Pro Can Do
+
+### Merge PDFs
+
+- Add multiple PDF files
+- Drag and drop files to reorder them
+- Sort filenames numerically
+- View total file count, page count, and selected file size
+- Choose a custom output filename
+- Merge everything into one downloadable PDF
+
+### Split PDF
+
+Split one PDF using any of these methods:
+
+- **Every page** — one output PDF per page
+- **Fixed-size chunks** — for example, 3 pages per output file
+- **Custom ranges** — for example, `1-3,4-7,8-10`
+
+All generated PDFs are packaged into one ZIP file for a clean single download.
+
+### Page Tools
+
+Work with selected page ranges such as `1-3,5,8-10`.
+
+Supported operations:
+
+- Extract selected pages
+- Remove selected pages
+- Rotate selected pages 90° left
+- Rotate selected pages 90° right
+- Save the result under a custom filename
 
 ## Privacy
 
-All PDF processing happens locally in your browser using `pdf-lib`. Your selected documents are not uploaded to a remote server by this application.
+PDFSplicer Pro is designed as a client-side web application.
 
-The page loads its frontend libraries from public CDNs, but the PDF contents themselves are processed locally in the browser.
+The PDF files you select are read and processed inside your browser using `pdf-lib`. The application does not send the contents of your PDFs to its own backend server.
+
+The page itself loads JavaScript libraries from public CDNs, so an internet connection is normally required when first loading the application unless those resources are already cached.
+
+## Validation and Safety Checks
+
+The application includes validation for common problems:
+
+- Maximum PDF size of 50 MB per selected file
+- Invalid or unsupported PDF files
+- Encrypted/password-protected PDFs that cannot be opened by `pdf-lib`
+- Page selections outside the document's page count
+- Invalid range syntax
+- Preventing removal of every page from a PDF
+- Limiting very large split operations to avoid accidentally producing hundreds of files
 
 ## Built With
 
 - HTML5
-- JavaScript
-- Tailwind CSS
-- pdf-lib
-- SortableJS
-- Lucide Icons
+- CSS3
+- Vanilla JavaScript
+- [pdf-lib](https://pdf-lib.js.org/)
+- [SortableJS](https://sortablejs.github.io/Sortable/)
+- [JSZip](https://stuk.github.io/jszip/)
+- [Lucide Icons](https://lucide.dev/)
 
-## How to Use
+## Project Structure
 
-1. Open the deployed PDFSplicer web app.
-2. Click the upload area or drag PDF files into it.
-3. Reorder files by dragging them using the handle.
-4. Optionally use **Sort by Number** to order filenames numerically.
-5. Remove any files you do not want included.
-6. Click **Merge PDFs**.
-7. The merged file will download automatically as `merged_document.pdf`.
+```text
+PDFSplicer/
+├── index.html      # Application layout and tool panels
+├── styles.css      # Responsive interface and component styling
+├── app.js          # Merge, split, page-processing and validation logic
+└── README.md
+```
 
-## Local Usage
-
-Because PDFSplicer is a static web app, no installation is required.
+## Run Locally
 
 Clone the repository:
 
@@ -53,54 +90,66 @@ git clone https://github.com/OnkarPawar1/PDFSplicer.git
 cd PDFSplicer
 ```
 
-Then open `index.html` in a modern browser.
+If the repository defaults to another branch, switch to the Pages branch:
 
-For a simple local web server, you can also run:
+```bash
+git checkout gh-pages
+```
+
+Start a simple local server:
 
 ```bash
 python -m http.server 8000
 ```
 
-Then visit:
+Then open:
 
 ```text
 http://localhost:8000
 ```
 
-## Deployment
+You can also open `index.html` directly in many modern browsers, although using a local HTTP server is recommended during development.
 
-This repository is configured around the `gh-pages` branch and can be served using GitHub Pages.
+## GitHub Pages Deployment
 
-Expected project URL:
+The current production application is published from the `gh-pages` branch.
+
+Expected URL:
 
 ```text
 https://onkarpawar1.github.io/PDFSplicer/
 ```
 
-## Limitations
+## Browser Support
 
-- Password-protected or encrypted PDFs may not merge successfully.
-- Very large PDFs may require significant browser memory.
-- The app depends on CDN-hosted frontend libraries, so an internet connection is normally required when loading the page unless those assets are cached.
+A current version of Chrome, Edge, Firefox, or Safari is recommended. Large or complex PDF operations can consume significant memory because processing happens locally in the browser.
 
-## Project Structure
+## Current Limitations
 
-```text
-PDFSplicer/
-├── index.html
-└── README.md
-```
+- Password-protected/encrypted PDFs may not be supported.
+- This is not a full PDF editor for modifying existing text or images inside PDF pages.
+- Browser memory limits may affect very large PDFs or very large merge jobs.
+- Compression is limited to what the generated PDF structure naturally provides; this is not an advanced image-compression engine.
+- CDN-hosted libraries mean the initial app load generally requires internet access.
 
-## License
+## Future Ideas
 
-No license has been added yet. If you plan to make the project openly reusable, consider adding an MIT License.
+Potential upgrades include:
+
+- Visual page thumbnails
+- Drag-and-drop page reordering inside a single PDF
+- Duplicate-page support
+- Watermarks and page numbers
+- Image-to-PDF conversion
+- PDF metadata editing
+- Offline/PWA support
+- Optional local compression workflows
 
 ## Author
 
-**Onkar Pawar**
-
+**Onkar Pawar**  
 GitHub: `OnkarPawar1`
 
 ---
 
-If you find PDFSplicer useful, consider starring the repository.
+If PDFSplicer Pro is useful to you, consider starring the repository.
