@@ -53,7 +53,7 @@ The page itself loads JavaScript libraries from public CDNs, so an internet conn
 
 The application includes validation for common problems:
 
-- Maximum PDF size of 50 MB per selected file
+- No application-enforced file-size cap; large PDFs remain subject to browser memory and device limitations
 - Invalid or unsupported PDF files
 - Encrypted/password-protected PDFs that cannot be opened by `pdf-lib`
 - Page selections outside the document's page count
@@ -123,6 +123,10 @@ https://onkarpawar1.github.io/PDFSplicer/
 ## Browser Support
 
 A current version of Chrome, Edge, Firefox, or Safari is recommended. Large or complex PDF operations can consume significant memory because processing happens locally in the browser.
+
+## Large PDF Files
+
+PDFSplicer does not impose a fixed per-file size limit. Files larger than 50 MB can be selected, but successful processing depends on browser memory, device resources, document complexity and output size. The application reads PDF data into memory, and merge/split operations can require multiple copies. This is not a guarantee of unlimited file sizes.
 
 ## Current Limitations
 
