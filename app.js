@@ -1,4 +1,3 @@
-const MAX_FILE_SIZE = 50 * 1024 * 1024;
 const { PDFDocument, degrees } = PDFLib;
 
 const mergeState = { files: [], counter: 0 };
@@ -77,10 +76,16 @@ function setLoading(button, loading, label, icon = 'loader-circle') {
 
 async function loadPdfInfo(file) {
   if (!isPdfFile(file)) throw new Error('Please choose a PDF file.');
-  if (file.size > MAX_FILE_SIZE) throw new Error('This file is larger than the 50 MB limit.');
-  const bytes = await file.arrayBuffer();
-  const pdf = await PDFDocument.load(bytes);
-  return { pages: pdf.getPageCount() };
+  try {
+    const bytes = await file.arrayBuffer();
+    const pdf = await PDFDocument.load(bytes);
+    return { pages: pdf.getPageCount() };
+  } catch (error) {
+    if (error instanceof RangeError || /memory|allocation|array buffer/i.test(error.message || '')) {
+      throw new Error('Not enough browser memory to open this PDF. Try a device with more available RAM.');
+    }
+    throw error;
+  }
 }
 
 function parsePageSelection(input, maxPages) {
